@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 /**
@@ -60,15 +60,12 @@ const (
 	input = "input.txt"
 )
 
-func getInput(file *os.File) (result [][]int) {
+func getInput(buffer []byte) (result [][]int) {
 	result = make([][]int, 128, 256)
-	scanner := bufio.NewScanner(file)
 	length := 0
 
-	for scanner.Scan() {
-		s := scanner.Text()
-
-		if s == "" {
+	for _, line := range strings.Split(string(buffer), "\n") {
+		if line == "" {
 			if length++; length == len(result) {
 				result = append(result, []int{})
 			}
@@ -76,7 +73,7 @@ func getInput(file *os.File) (result [][]int) {
 			continue
 		}
 
-		val, _ := strconv.Atoi(s)
+		val, _ := strconv.Atoi(line)
 		result[length] = append(result[length], val)
 	}
 
@@ -84,16 +81,15 @@ func getInput(file *os.File) (result [][]int) {
 }
 
 func main() {
-	file, err := os.Open(input)
+	buffer, err := os.ReadFile(input)
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
 
 	if arg := os.Args[1]; arg == "part_1" {
-		fmt.Println("result:", getMaxValue(getInput(file)))
+		fmt.Println("result:", getMaxValue(getInput(buffer)))
 	} else {
-		fmt.Println("result:", getMaxValues(getInput(file), 3))
+		fmt.Println("result:", getMaxValues(getInput(buffer), 3))
 	}
 }
