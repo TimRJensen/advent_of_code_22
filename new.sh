@@ -24,10 +24,37 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 )
 
+/**
+ * part_1
+ */
+
+/**
+ * part_2
+ */
+
+/**
+ * driver
+ */
+func getInput(buffer []byte) () {
+
+}
+
 func main() {
-	fmt.Println("Hello, $dest_name!")
+	buffer, err := os.ReadFile("input.txt")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if arg := os.Args[1]; arg == "part_1" {
+		fmt.Println("result:", nil)
+	} else {
+		fmt.Println("result:", nil)
+	}
 }
 EOF
 
