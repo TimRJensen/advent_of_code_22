@@ -1,6 +1,7 @@
 package main
 
 import (
+	"common"
 	"fmt"
 	"log"
 	"os"
@@ -44,17 +45,17 @@ func (stack *stack[T]) String() string {
 /**
  * part_1
  */
-func getTopSuppliesPart1(supplies []*stack[string], instructions [][]int) (result string) {
+func getTopSuppliesPart1(supplies []*common.Stack[string], instructions [][]int) (result string) {
 	for _, instruction := range instructions {
 		for i := 0; i < instruction[move]; i++ {
-			if line, ok := supplies[instruction[from]].pop(); ok {
-				supplies[instruction[to]].push(line)
+			if line, ok := supplies[instruction[from]].Pop(); ok {
+				supplies[instruction[to]].Push(line)
 			}
 		}
 	}
 
 	for _, stack := range supplies {
-		if s, ok := stack.pop(); ok {
+		if s, ok := stack.Pop(); ok {
 			result += s
 		}
 	}
@@ -65,25 +66,25 @@ func getTopSuppliesPart1(supplies []*stack[string], instructions [][]int) (resul
 /**
  * part_2
  */
-func getTopSuppliesPart2(supplies []*stack[string], instructions [][]int) (result string) {
+func getTopSuppliesPart2(supplies []*common.Stack[string], instructions [][]int) (result string) {
 	for _, instruction := range instructions {
-		stack := newStack[string]()
+		stack := common.NewStack[string]()
 
 		for i := 0; i < instruction[move]; i++ {
-			if line, ok := supplies[instruction[from]].pop(); ok {
-				stack.push(line)
+			if line, ok := supplies[instruction[from]].Pop(); ok {
+				stack.Push(line)
 			}
 		}
 
-		for !stack.isEmpty() {
-			if line, ok := stack.pop(); ok {
-				supplies[instruction[to]].push(line)
+		for !stack.IsEmpty() {
+			if line, ok := stack.Pop(); ok {
+				supplies[instruction[to]].Push(line)
 			}
 		}
 	}
 
 	for _, stack := range supplies {
-		if s, ok := stack.pop(); ok {
+		if s, ok := stack.Pop(); ok {
 			result += s
 		}
 	}
@@ -122,7 +123,7 @@ func getInstructions(lines []string) (result [][]int) {
 	return result
 }
 
-func getSupplies(lines []string) (result []*stack[string]) {
+func getSupplies(lines []string) (result []*common.Stack[string]) {
 	stack := newStack[string]()
 
 	for _, line := range lines {
@@ -134,9 +135,9 @@ func getSupplies(lines []string) (result []*stack[string]) {
 			for i := 0; i < len(line); i += increment {
 				if s := strings.Trim(line[i:i+increment], " []"); s != "" {
 					if s[0] >= 48 && s[0] <= 57 {
-						result = append(result, newStack[string]())
+						result = append(result, common.NewStack[string]())
 					} else {
-						result[i/increment].push(s)
+						result[i/increment].Push(s)
 					}
 				}
 			}
@@ -146,7 +147,7 @@ func getSupplies(lines []string) (result []*stack[string]) {
 	return result
 }
 
-func getInput(buffer []byte) (supplies []*stack[string], instructions [][]int) {
+func getInput(buffer []byte) (supplies []*common.Stack[string], instructions [][]int) {
 	lines := strings.Split(string(buffer), "\n")
 	i := slices.Index(lines, "")
 
