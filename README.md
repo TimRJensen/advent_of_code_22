@@ -1,8 +1,8 @@
 # Advent of code 2022
-This event provides an opportunity to get familiar with a language that I always wanted to try: go
+This event provides an opportunity to get familiar with a language that I always wanted to try: [Go](https://go.dev/)
 
 ## Rules of engagement
-- Adheer to go coding standards and idioms.
+- Adheer to Go [coding standards and idioms](https://google.github.io/styleguide/go/).
 - Implementation should work for any input size and for malformed input.
 - No magic numbers or strings, except for:
 - - Char (rune) arithmetic.
