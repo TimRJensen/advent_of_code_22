@@ -9,6 +9,6 @@ This event provides an opportunity to get familiar with a language that I always
   - Even/odd expressions.
   - For loop initializers, end conditions and steps.
   - Array, slice, map or struct initializers, including length and capacity arguments to make.
-  - path to input and commandline arguments.
+  - Path to input and commandline arguments.
 - No external packages.
 - KISS.
