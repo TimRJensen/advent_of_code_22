@@ -1,46 +1,38 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 )
 
-/**
- * part_1
- */
 const (
-	win  int = 6
-	draw int = 3
+	rock int = iota
+	paper
+	scissors
+	shapes int = 3
+	win    int = 6
+	draw   int = 3
 )
 
 var (
-	hands = [...]string{"AX", "BY", "CZ"}
+	atohand = map[string]int{"AX": rock, "BY": paper, "CZ": scissors}
 )
 
-func handToInt(s string) (int, error) {
-	for i := 0; i < len(hands); i++ {
-		if strings.Contains(hands[i], s) {
-			return i, nil
-		}
-	}
-
-	return 0, errors.New("Invalid input")
-}
-
-func getScore(list []int) (result int) {
+/**
+ * part_1
+ */
+func score(list []int) (result int) {
 	for i := 0; i < len(list); i += 2 {
 		switch {
-		case (list[i+1]+2)%len(hands) == list[i]:
+		case (list[i+1]+2)%shapes == list[i]:
 			result += list[i+1] + win
 		case list[i+1] == list[i]:
 			result += list[i+1] + draw
 		default:
 			result += list[i+1]
 		}
-
 		result++
 	}
 
@@ -50,23 +42,16 @@ func getScore(list []int) (result int) {
 /**
  * part_2
  */
-const (
-	x int = iota
-	y
-	z
-)
-
-func getScoreForced(list []int) (result int) {
+func scoreForced(list []int) (result int) {
 	for i := 0; i < len(list); i += 2 {
 		switch list[i+1] {
-		case z:
-			result += (list[i]+1)%len(hands) + win
-		case y:
+		case scissors:
+			result += (list[i]+1)%shapes + win
+		case paper:
 			result += list[i] + draw
 		default:
-			result += (list[i] + 2) % len(hands)
+			result += (list[i] + 2) % shapes
 		}
-
 		result++
 	}
 
@@ -76,15 +61,20 @@ func getScoreForced(list []int) (result int) {
 /**
  * driver
  */
-func getInput(buffer []byte) (result []int) {
-	lines := strings.Split(string(buffer), "\n")
+func parseInput(buffer []byte) (result []int) {
+	atohandWithDefault := func(s string) int {
+		for key, val := range atohand {
+			if strings.Contains(key, s) {
+				return val
+			}
+		}
+		return -1
+	}
 
-	for _, line := range lines {
-		round := strings.Split(line, " ")
-
-		for _, hand := range round {
-			if val, err := handToInt(hand); err == nil {
-				result = append(result, val)
+	for _, line := range strings.Split(string(buffer), "\n") {
+		if fields := strings.Fields(line); len(fields) == 2 {
+			for _, hand := range fields {
+				result = append(result, atohandWithDefault(hand))
 			}
 		}
 	}
@@ -99,9 +89,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if arg := os.Args[1]; arg == "part_1" {
-		fmt.Println("result:", getScore(getInput(buffer)))
+	if len(os.Args) < 3 || os.Args[1] != "part" || !strings.Contains("12", os.Args[2]) {
+		log.Fatal("usage: part <1|2>")
+	}
+
+	if arg := os.Args[2]; arg == "1" {
+		fmt.Println("result:", score(parseInput(buffer)))
 	} else {
-		fmt.Println("result:", getScoreForced(getInput(buffer)))
+		fmt.Println("result:", scoreForced(parseInput(buffer)))
 	}
 }
