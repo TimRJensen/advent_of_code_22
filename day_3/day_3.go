@@ -4,62 +4,30 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"slices"
 	"strings"
 	"unicode"
 )
 
 var (
-	starts = [...]int{int('a'), 1, int('A'), 27}
+	offsets = map[bool]map[rune]int{false: {'a': 1}, true: {'A': 27}}
 )
-
-type entry struct {
-	value int
-	count int
-}
-
-func (entry entry) String() string {
-	return fmt.Sprintf("value: %d; count: %d", entry.value, entry.count)
-}
-
-func getPriorities(m map[rune]*entry) (result int) {
-	for _, item := range m {
-		result += item.count * item.value
-	}
-
-	return result
-}
 
 /**
  * part_1
  */
-func getInputPart1(buffer []byte) (result map[rune]*entry) {
-	result = make(map[rune]*entry)
-
-	for _, line := range strings.Split(string(buffer), "\n") {
-		m := len(line) / 2
-		a := line[:m]
-		b := line[m:]
+func itemPriorities(lines []string) (result int) {
+	for _, line := range lines {
+		mid := len(line) / 2
+		a := line[:mid]
+		b := line[mid:]
 
 		for _, c := range a {
 			if !strings.ContainsRune(b, c) {
 				continue
 			}
 
-			if item, ok := result[c]; ok {
-				item.count++
-			} else {
-				i := 0
-
-				if unicode.IsUpper(c) {
-					i = 2
-				}
-
-				result[c] = &entry{
-
-					value: (int(c) - starts[i]) + starts[i+1],
-					count: 1,
-				}
+			for key, val := range offsets[unicode.IsUpper(c)] {
+				result += int(c-key) + val
 			}
 
 			break
@@ -72,53 +40,43 @@ func getInputPart1(buffer []byte) (result map[rune]*entry) {
 /**
  * part_2
  */
-func getInputPart2(buffer []byte) (result map[rune]*entry) {
-	result = make(map[rune]*entry)
-	lines := strings.Split(string(buffer), "\n")
+func badgePriorities(lines []string, elves int) (result int) {
+	for i := 0; i < len(lines); i += elves {
+		seen := map[rune]complex64{}
+		flag := false
+		a := lines[i]
 
-	for i := 0; i < len(lines); i += 3 {
-		m := make(map[rune]*entry)
+		for _, c := range a {
+			if _, ok := seen[c]; !ok {
+				for key, val := range offsets[unicode.IsUpper(c)] {
+					seen[c] = complex(float32(int(c-key)+val), 1)
+				}
+			}
 
-		for _, line := range lines[i+1 : i+3] {
-			cs := make([]rune, len(lines[i]))
+			for j := 1; j < elves; j++ {
+				b := lines[i+j]
 
-			for _, c := range lines[i] {
-				if !strings.ContainsRune(line, c) {
+				if !strings.ContainsRune(b, c) {
 					continue
 				}
 
-				if slices.Contains(cs, c) {
-					continue
-				}
+				if val := seen[c]; int(imag(val)) == j {
+					val += 0 + 1i
 
-				cs = append(cs, c)
+					if r, i := real(val), imag(val); int(i) == elves {
+						result += int(r)
+						flag = true
 
-				if item, ok := m[c]; ok {
-					item.count++
-				} else {
-					m[c] = &entry{count: 1}
+						break
+					}
+
+					seen[c] = val
 				}
 			}
-		}
 
-		for key, item := range m {
-			if item.count < 2 {
-				continue
+			if flag {
+				break
 			}
-
-			if item, ok := result[key]; ok {
-				item.count++
-			} else {
-				i := 0
-
-				if unicode.IsUpper(key) {
-					i = 2
-				}
-
-				result[key] = &entry{value: int(key) - starts[i] + starts[i+1], count: 1}
-			}
-
-			break
 		}
 	}
 
@@ -128,6 +86,11 @@ func getInputPart2(buffer []byte) (result map[rune]*entry) {
 /**
  * driver
  */
+func parseInput(buffer []byte) (result []string) {
+	result = append(result, strings.Split(string(buffer), "\n")...)
+	return result
+}
+
 func main() {
 	buffer, err := os.ReadFile("input.txt")
 
@@ -135,9 +98,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if arg := os.Args[1]; arg == "part_1" {
-		fmt.Println("result:", getPriorities(getInputPart1(buffer)))
+	if len(os.Args) < 3 || os.Args[1] != "part" || !strings.Contains("12", os.Args[2]) {
+		log.Fatal("usage: part <1|2>")
+	}
+
+	if arg := os.Args[2]; arg == "1" {
+		fmt.Println("result:", itemPriorities(parseInput(buffer)))
 	} else {
-		fmt.Println("result:", getPriorities(getInputPart2(buffer)))
+		fmt.Println("result:", badgePriorities(parseInput(buffer), 3))
 	}
 }
