@@ -5,80 +5,43 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"unicode"
+)
+
+const (
+	move = iota
+	from
+	to
+)
+
+var (
+	regex = regexp.MustCompile(`[\[\]A-Z1-9 ]{3,4}`)
 )
 
 /**
- * stack
+ * part_1 & part_2
  */
-type stack[T rune | string] struct {
-	items []T
-}
-
-func newStack[T rune | string]() *stack[T] {
-	return &stack[T]{items: make([]T, 0, 256)}
-}
-
-func (stack *stack[T]) isEmpty() bool {
-	return len(stack.items) == 0
-}
-
-func (stack *stack[T]) push(item T) {
-	stack.items = append(stack.items, item)
-}
-
-func (stack *stack[T]) pop() (result T, flag bool) {
-	if stack.isEmpty() {
-		return *new(T), false
-	}
-	result = stack.items[len(stack.items)-1]
-	stack.items = stack.items[:len(stack.items)-1]
-	return result, true
-}
-
-func (stack *stack[T]) String() string {
-	return fmt.Sprintf("%T%v", stack, stack.items)
-}
-
-/**
- * part_1
- */
-func getTopSuppliesPart1(supplies []*common.Stack[string], instructions [][]int) (result string) {
+func topSupplies(supplies []*common.Stack[string], instructions [][]int, preserveOrder bool) (result string) {
 	for _, instruction := range instructions {
-		for i := 0; i < instruction[move]; i++ {
-			if line, ok := supplies[instruction[from]].Pop(); ok {
-				supplies[instruction[to]].Push(line)
-			}
-		}
-	}
-
-	for _, stack := range supplies {
-		if s, ok := stack.Pop(); ok {
-			result += s
-		}
-	}
-
-	return result
-}
-
-/**
- * part_2
- */
-func getTopSuppliesPart2(supplies []*common.Stack[string], instructions [][]int) (result string) {
-	for _, instruction := range instructions {
-		stack := common.NewStack[string]()
+		list := []string{}
 
 		for i := 0; i < instruction[move]; i++ {
-			if line, ok := supplies[instruction[from]].Pop(); ok {
-				stack.Push(line)
+			if val, ok := supplies[instruction[from]].Pop(); ok {
+				list = append(list, val)
 			}
 		}
 
-		for !stack.IsEmpty() {
-			if line, ok := stack.Pop(); ok {
-				supplies[instruction[to]].Push(line)
+		if preserveOrder {
+			for i := len(list) - 1; i >= 0; i-- {
+				supplies[instruction[to]].Push(list[i : i+1][0])
+			}
+		} else {
+			for i := 0; i < len(list); i++ {
+				supplies[instruction[to]].Push(list[i : i+1][0])
 			}
 		}
 	}
@@ -95,26 +58,37 @@ func getTopSuppliesPart2(supplies []*common.Stack[string], instructions [][]int)
 /**
  * driver
  */
-const (
-	move      = 0
-	from      = 1
-	to        = 2
-	increment = 4
-)
-
-func getInstructions(lines []string) (result [][]int) {
+func parseInstructions(lines []string) (result [][]int) {
 	for _, line := range lines {
 		i := len(result)
-		result = append(result, make([]int, 0, 256))
+		result = append(result, []int{})
 
-		for j, instruction := range strings.Split(line, " ") {
-			if j%2 == 1 {
-				val, _ := strconv.Atoi(instruction)
+		for j, field := range strings.Fields(line) {
+			val, err := strconv.Atoi(field)
 
-				if j > 1 {
-					result[i] = append(result[i], val-1)
+			if err != nil {
+				continue
+			}
+
+			if j > 1 {
+				result[i] = append(result[i], val-1)
+			} else {
+				result[i] = append(result[i], val)
+			}
+		}
+	}
+
+	return result
+}
+
+func parseSupplies(lines []string) (result []*common.Stack[string]) {
+	for i := len(lines) - 1; i >= 0; i-- {
+		for j, match := range regex.FindAllString(lines[i : i+1][0], -1) {
+			if s := strings.Trim(match, "[] "); s != "" {
+				if unicode.IsDigit(rune(s[0])) {
+					result = append(result, common.NewStack[string]())
 				} else {
-					result[i] = append(result[i], val)
+					result[j].Push(s)
 				}
 			}
 		}
@@ -123,35 +97,14 @@ func getInstructions(lines []string) (result [][]int) {
 	return result
 }
 
-func getSupplies(lines []string) (result []*common.Stack[string]) {
-	stack := newStack[string]()
-
-	for _, line := range lines {
-		stack.push(line + " ")
-	}
-
-	for !stack.isEmpty() {
-		if line, ok := stack.pop(); ok {
-			for i := 0; i < len(line); i += increment {
-				if s := strings.Trim(line[i:i+increment], " []"); s != "" {
-					if s[0] >= 48 && s[0] <= 57 {
-						result = append(result, common.NewStack[string]())
-					} else {
-						result[i/increment].Push(s)
-					}
-				}
-			}
-		}
-	}
-
-	return result
-}
-
-func getInput(buffer []byte) (supplies []*common.Stack[string], instructions [][]int) {
+func parseInput(buffer []byte) (supplies []*common.Stack[string], instructions [][]int) {
 	lines := strings.Split(string(buffer), "\n")
-	i := slices.Index(lines, "")
 
-	return getSupplies(lines[:i]), getInstructions(lines[i+1:])
+	if i := slices.Index(lines, ""); i == -1 {
+		return supplies, instructions
+	} else {
+		return parseSupplies(lines[:i]), parseInstructions(lines[i+1:])
+	}
 }
 
 func main() {
@@ -161,11 +114,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	supplies, instructions := getInput(buffer)
+	if len(os.Args) < 3 || os.Args[1] != "part" || !strings.Contains("12", os.Args[2]) {
+		log.Fatal("usage: part <1|2>")
+	}
 
-	if arg := os.Args[1]; arg == "part_1" {
-		fmt.Println("result:", getTopSuppliesPart1(supplies, instructions))
+	supplies, instructions := parseInput(buffer)
+
+	if arg := os.Args[2]; arg == "1" {
+		fmt.Println("result:", topSupplies(supplies, instructions, false))
 	} else {
-		fmt.Println("result:", getTopSuppliesPart2(supplies, instructions))
+		fmt.Println("result:", topSupplies(supplies, instructions, true))
 	}
 }
