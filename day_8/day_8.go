@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -14,6 +15,8 @@ const (
 	down
 	right
 	dirs
+	dimensions = 2
+	corners    = dimensions * 2
 )
 
 var (
@@ -28,7 +31,7 @@ func nextPoint(x int, y int, d int) (int, int) {
 /**
  * part_1
  */
-func getVisibleTrees(list [][]int) (result int) {
+func visibleTrees(list [][]int) (result int) {
 	max_y := len(list)
 	max_x := len(list[0])
 
@@ -55,16 +58,16 @@ func getVisibleTrees(list [][]int) (result int) {
 		}
 	}
 
-	return 2*(max_y+max_x-2) + result //magic int
+	return dimensions*(max_y+max_x) - corners + result
 }
 
 /**
  * part_2
  */
-func getScenicScore(list [][]int) (result int) {
+func scenicScore(list [][]int) (result int) {
 	max_y := len(list)
 	max_x := len(list[0])
-	products := make([]int, 0, 128)
+	products := []int{}
 
 	for y := 1; y < max_y-1; y++ {
 		for x := 1; x < max_x-1; x++ {
@@ -94,22 +97,24 @@ func getScenicScore(list [][]int) (result int) {
 	}
 
 	slices.SortFunc(products, func(a int, b int) int {
-		return a - b
+		return b - a
 	})
 
-	return products[len(products)-1]
+	return products[0]
 }
 
 /**
  * driver
  */
-func getInput(buffer []byte) (result [][]int) {
+func parseInput(buffer []byte) (result [][]int) {
 	for _, line := range strings.Split(string(buffer), "\n") {
 		l := len(result)
-		result = append(result, make([]int, 0, 128))
+		result = append(result, []int{})
 
 		for _, c := range line {
-			result[l] = append(result[l], int(c-'0'))
+			if unicode.IsDigit(c) {
+				result[l] = append(result[l], int(c-'0'))
+			}
 		}
 	}
 
@@ -123,9 +128,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if arg := os.Args[1]; arg == "part_1" {
-		fmt.Println("result:", getVisibleTrees(getInput(buffer)))
+	if len(os.Args) < 3 || os.Args[1] != "part" || !strings.Contains("12", os.Args[2]) {
+		log.Fatal("usage: part <1|2>")
+	}
+
+	if arg := os.Args[2]; arg == "1" {
+		fmt.Println("result:", visibleTrees(parseInput(buffer)))
 	} else {
-		fmt.Println("result:", getScenicScore(getInput(buffer)))
+		fmt.Println("result:", scenicScore(parseInput(buffer)))
 	}
 }
