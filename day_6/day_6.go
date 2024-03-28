@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 /**
@@ -40,7 +41,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if arg := os.Args[1]; arg == "part_1" {
+	if len(os.Args) < 3 || os.Args[1] != "part" || !strings.Contains("12", os.Args[2]) {
+		log.Fatal("usage: part <1|2>")
+	}
+
+	if arg := os.Args[2]; arg == "1" {
 		fmt.Println("result:", getMarkerPosition(buffer, 4))
 	} else {
 		fmt.Println("result:", getMarkerPosition(buffer, 14))
