@@ -5,8 +5,19 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
+	"slices"
 	"strings"
+)
+
+const (
+	minSpace    = 100000
+	maxSpace    = 70000000
+	updateSpace = 30000000
+	ls          = "$ ls"
+	cd          = "$ cd"
+	up          = ".."
+	dir         = "dir"
+	seperator   = "/"
 )
 
 type node struct {
@@ -14,17 +25,6 @@ type node struct {
 	parent *node
 	size   int
 	nodes  map[string]*node
-}
-
-func (node *node) Compare(a *node, b *node) int {
-	switch {
-	case a.size < b.size:
-		return -1
-	case a.size > b.size:
-		return 1
-	default:
-		return 0
-	}
 }
 
 type tree struct {
@@ -48,8 +48,8 @@ func (tree *tree) insert(dest *node, node *node) bool {
 /**
  * part_1
  */
-func getSize(tree *tree) (result int) {
-	m := make(map[string]int)
+func lowestSizes(tree *tree) (result int) {
+	m := map[string]int{}
 	stack := common.NewStack[*node]()
 	stack.Push(tree.root)
 
@@ -78,9 +78,9 @@ func getSize(tree *tree) (result int) {
 /**
  * part_2
  */
-func getLowestSize(tree *tree) (result int) {
+func lowestFreeingSize(tree *tree) (result int) {
 	free := maxSpace - tree.root.size
-	list := make([]*node, 0, 256)
+	list := []*node{}
 	stack := common.NewStack[*node]()
 	stack.Push(tree.root)
 
@@ -100,8 +100,8 @@ func getLowestSize(tree *tree) (result int) {
 		}
 	}
 
-	sort.Slice(list, func(i int, j int) bool {
-		return list[i].size < list[j].size
+	slices.SortFunc(list, func(a *node, b *node) int {
+		return a.size - b.size
 	})
 
 	return list[0].size
@@ -110,20 +110,9 @@ func getLowestSize(tree *tree) (result int) {
 /**
  * driver
  */
-const (
-	minSpace    = 100000
-	maxSpace    = 70000000
-	updateSpace = 30000000
-	ls          = "$ ls"
-	cd          = "$ cd"
-	up          = ".."
-	dir         = "dir"
-	seperator   = "/"
-)
-
-func getInput(buffer []byte) (result *tree) {
-	result = new(tree)
-	parent := new(node)
+func parseInput(buffer []byte) (result *tree) {
+	result = &tree{}
+	parent := &node{}
 
 	for _, line := range strings.Split(string(buffer), "\n") {
 		switch {
@@ -142,7 +131,8 @@ func getInput(buffer []byte) (result *tree) {
 				n := &node{
 					name:   parent.name + name + seperator,
 					parent: parent,
-					nodes:  make(map[string]*node)}
+					nodes:  map[string]*node{},
+				}
 				result.insert(parent, n)
 				parent = n
 			}
@@ -172,9 +162,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if arg := os.Args[1]; arg == "part_1" {
-		fmt.Println("result:", getSize(getInput(buffer)))
+	if len(os.Args) < 3 || os.Args[1] != "part" || !strings.Contains("12", os.Args[2]) {
+		log.Fatal("usage: part <1|2>")
+	}
+
+	if arg := os.Args[2]; arg == "1" {
+		fmt.Println("result:", lowestSizes(parseInput(buffer)))
 	} else {
-		fmt.Println("result:", getLowestSize(getInput(buffer)))
+		fmt.Println("result:", lowestFreeingSize(parseInput(buffer)))
 	}
 }
