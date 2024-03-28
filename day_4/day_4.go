@@ -23,7 +23,7 @@ func (a *section) intersects(b *section) bool {
 /**
  * part_1
  */
-func getContains(list []*section) (result int) {
+func contains(list []*section) (result int) {
 	for i := 0; i < len(list); i += 2 {
 		if list[i].contains(list[i+1]) || list[i+1].contains(list[i]) {
 			result++
@@ -36,7 +36,7 @@ func getContains(list []*section) (result int) {
 /**
  * part_2
  */
-func getIntersects(list []*section) (result int) {
+func intersects(list []*section) (result int) {
 	for i := 0; i < len(list); i += 2 {
 		if list[i].intersects(list[i+1]) {
 			result++
@@ -49,7 +49,7 @@ func getIntersects(list []*section) (result int) {
 /**
  * driver
  */
-func getInput(buffer []byte) (result []*section) {
+func parseInput(buffer []byte) (result []*section) {
 	for _, line := range strings.Split(string(buffer), "\n") {
 		a := &section{}
 		b := &section{}
@@ -69,9 +69,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if arg := os.Args[1]; arg == "part_1" {
-		fmt.Println("result:", getContains(getInput(buffer)))
+	if len(os.Args) < 3 || os.Args[1] != "part" || !strings.Contains("12", os.Args[2]) {
+		log.Fatal("usage: part <1|2>")
+	}
+
+	if arg := os.Args[2]; arg == "1" {
+		fmt.Println("result:", contains(parseInput(buffer)))
 	} else {
-		fmt.Println("result:", getIntersects(getInput(buffer)))
+		fmt.Println("result:", intersects(parseInput(buffer)))
 	}
 }
